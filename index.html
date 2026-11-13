@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>미니 게임 천국 (3-in-1 Arcade)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 50%, #311042 100%);
+            color: #F8FAFC;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+            overflow: hidden;
+        }
+
+        .arcade-container {
+            background-color: #1E293B;
+            padding: 20px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            border: 2px solid #334155;
+            text-align: center;
+            position: relative;
+            max-width: 440px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #38BDF8;
+            font-size: 1.6rem;
+            margin-bottom: 12px;
+            text-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+        }
+
+        .game-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 12px;
+            background-color: #0F172A;
+            padding: 5px;
+            border-radius: 14px;
+            border: 1px solid #334155;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background-color: transparent;
+            color: #94A3B8;
+            border: none;
+            padding: 8px 6px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background-color: #38BDF8;
+            color: #0F172A;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+        }
+
+        .status-board {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: #0F172A;
+            padding: 8px 12px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #CBD5E1;
+            border: 1px solid #334155;
+        }
+
+        .status-board span {
+            color: #FACC15;
+            font-size: 0.95rem;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 360px;
+            height: 480px;
+            margin: 0 auto;
+        }
+
+        canvas#gameCanvas {
+            background-color: #0F172A;
+            border: 3px solid #334155;
+            border-radius: 16px;
+            display: block;
+            touch-action: none;
+        }
+
+        .tetris-panel {
+            display: none;
+            position: absolute;
+            top: 10px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid #334155;
+            border-radius: 10px;
+            padding: 6px;
+            text-align: center;
+        }
+
+        .tetris-panel span {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #38BDF8;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        #holdBox { left: 8px; }
+        #nextPreviewBox { right: 8px; }
+
+        .controls-info {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #94A3B8;
+            background-color: #0F172A;
+            padding: 8px;
+            border-radius: 10px;
+            border: 1px solid #334155;
+        }
+
+        .touch-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-top: 10px;
+            max-width: 260px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .ctrl-btn {
+            background-color: #334155;
+            color: #F8FAFC;
+            border: 1px solid #475569;
+            padding: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .ctrl-btn:active {
+            background-color: #38BDF8;
+            color: #0F172A;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        .overlay h2 {
+            font-size: 1.6rem;
+            color: #38BDF8;
+            margin-bottom: 8px;
+        }
+
+        .overlay p {
+            font-size: 0.9rem;
+            color: #CBD5E1;
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+
+        .btn {
+            background-color: #38BDF8;
+            color: #0F172A;
+            border: none;
+            padding: 10px 24px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .settings-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 80%;
+            margin-bottom: 15px;
+            background-color: #0F172A;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
+
+        .settings-item span {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #F8FAFC;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #475569;
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #38BDF8;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        .perfect-popup {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.5);
+            font-size: 2.2rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #00F0FF, #0000FF, #8B00FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 25px rgba(255, 255, 255, 0.9);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 5;
+            white-space: nowrap;
+        }
+
+        .perfect-popup.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="arcade-container">
+        <h1>🕹️ 미니 게임 천국</h1>
+
+        <div class="game-tabs">
+            <button class="tab-btn active" onclick="switchGame('snake', event)">🐍 스네이크</button>
+            <button class="tab-btn" onclick="switchGame('tetris', event)">🧩 일반 테트리스</button>
+            <button class="tab-btn" onclick="switchGame('tetrisHard', event)">🔥 테트리스 (하드)</button>
+        </div>
+
+        <div class="status-board" id="statusBoard"></div>
+
+        <div class="canvas-wrapper">
+            <canvas id="gameCanvas" width="360" height="480"></canvas>
+            <div id="perfectPopup" class="perfect-popup">PERFECT CLEAR! 3X</div>
+            
+            <div class="tetris-panel" id="holdBox">
+                <span>HOLD (C)</span>
+                <canvas id="holdCanvas" width="55" height="55"></canvas>
+            </div>
+
+            <div class="tetris-panel" id="nextPreviewBox">
+                <span>NEXT</span>
+                <canvas id="nextCanvas" width="55" height="55"></canvas>
+            </div>
+        </div>
+
+        <div class="controls-info" id="controlsInfo"></div>
+
+        <div class="touch-controls" id="touchControls">
+            <button class="ctrl-btn" id="btnHold">HOLD</button>
+            <button class="ctrl-btn" id="btnUp">▲</button>
+            <button class="ctrl-btn" id="btnReset">RESET (R)</button>
+            <button class="ctrl-btn" id="btnLeft">◄</button>
+            <button class="ctrl-btn" id="btnDown">▼</button>
+            <button class="ctrl-btn" id="btnRight">►</button>
+        </div>
+
+        <div id="gameOverlay" class="overlay">
+            <h2 id="overlayTitle">미니 게임 선택</h2>
+            <p id="overlayText">게임 탭을 고르고 시작 버튼을 누르세요!</p>
+            <button class="btn" id="startBtn" onclick="startGame()">게임 시작</button>
+        </div>
+
+        <!-- 설정 창 오버레이 -->
+        <div id="settingsOverlay" class="overlay" style="display: none;">
+            <h2>⚙️ 게임 설정</h2>
+            <p>ESC 키를 누르면 게임으로 돌아갑니다.</p>
+            
+            <div class="settings-item">
+                <span>🌈 무지개 효과</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="rainbowToggle" checked onchange="toggleRainbow(this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <button class="btn" onclick="closeSettings()">닫기 (Resume)</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const nextCanvas = document.getElementById('nextCanvas');
+        const nextCtx = nextCanvas.getContext('2d');
+        const holdCanvas = document.getElementById('holdCanvas');
+        const holdCtx = holdCanvas.getContext('2d');
+
+        const nextPreviewBox = document.getElementById('nextPreviewBox');
+        const holdBox = document.getElementById('holdBox');
+
+        const statusBoard = document.getElementById('statusBoard');
+        const controlsInfo = document.getElementById('controlsInfo');
+        const overlay = document.getElementById('gameOverlay');
+        const overlayTitle = document.getElementById('overlayTitle');
+        const overlayText = document.getElementById('overlayText');
+        const startBtn = document.getElementById('startBtn');
+        const settingsOverlay = document.getElementById('settingsOverlay');
+        const perfectPopup = document.getElementById('perfectPopup');
+
+        let currentGame = 'snake';
+        let isGameRunning = false;
+        let isPaused = false;
+        let useRainbowEffect = true;
+        let animationId = null;
+
+        let perfectFlashTimer = 0;
+
+        const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, Space: false, KeyC: false };
+
+        // 4방향(이동 + 회전) 모두 꾹 누르기 연속 입력 지원
+        const tetrisHoldState = {
+            ArrowLeft: { active: false, startTime: 0, lastMoveTime: 0, rate: 45 },
+            ArrowRight: { active: false, startTime: 0, lastMoveTime: 0, rate: 45 },
+            ArrowDown: { active: false, startTime: 0, lastMoveTime: 0, rate: 45 },
+            ArrowUp: { active: false, startTime: 0, lastMoveTime: 0, rate: 130 } // 회전 꾹 누르기 간격
+        };
+        const DAS_DELAY = 150; // 꾹 누른 후 연속 작동 시작 대기 시간 (ms)
+
+        function resetHoldKeys() {
+            for (let k in tetrisHoldState) {
+                tetrisHoldState[k].active = false;
+            }
+        }
+
+        function toggleRainbow(enabled) {
+            useRainbowEffect = enabled;
+            if (isPaused) {
+                if (currentGame === 'snake') renderSnake();
+                if (currentGame.startsWith('tetris')) renderTetris();
+            }
+        }
+
+        function openSettings() {
+            if (!isGameRunning || isPaused) return;
+            isPaused = true;
+            resetHoldKeys();
+            settingsOverlay.style.display = 'flex';
+        }
+
+        function closeSettings() {
+            if (!isPaused) return;
+            isPaused = false;
+            settingsOverlay.style.display = 'none';
+            
+            if (currentGame === 'snake') {
+                lastSnakeStepTime = Date.now();
+                gameLoopSnake();
+            } else if (currentGame.startsWith('tetris')) {
+                tetrisState.lastDropTime = Date.now();
+                gameLoopTetris();
+            }
+        }
+
+        function resetCurrentGame() {
+            if (isPaused) closeSettings();
+            resetHoldKeys();
+            startGame();
+        }
+
+        window.addEventListener('keydown', e => {
+            if (e.key === 'Escape' || e.key === 'Esc') {
+                e.preventDefault();
+                if (isPaused) {
+                    closeSettings();
+                } else if (isGameRunning) {
+                    openSettings();
+                }
+                return;
+            }
+
+            if (isPaused) return;
+
+            if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) {
+                e.preventDefault();
+            }
+            if (e.key === 'r' || e.key === 'R') {
+                resetCurrentGame();
+                return;
+            }
+
+            if (e.code === 'Space') {
+                if (!keys.Space && isGameRunning && currentGame.startsWith('tetris')) {
+                    handleTetrisInput('Space');
+                }
+                keys.Space = true;
+            }
+            if (e.key === 'c' || e.key === 'C') {
+                if (!keys.KeyC && isGameRunning && currentGame.startsWith('tetris')) {
+                    holdTetris();
+                }
+                keys.KeyC = true;
+            }
+
+            if (keys.hasOwnProperty(e.key)) {
+                const isFirstPress = !keys[e.key];
+                keys[e.key] = true;
+
+                if (isGameRunning) {
+                    if (currentGame === 'snake' && isFirstPress) {
+                        handleSnakeInput(e.key);
+                    }
+                    if (currentGame.startsWith('tetris') && isFirstPress) {
+                        if (tetrisHoldState[e.key]) {
+                            const now = Date.now();
+                            tetrisHoldState[e.key].active = true;
+                            tetrisHoldState[e.key].startTime = now;
+                            tetrisHoldState[e.key].lastMoveTime = now;
+                        }
+                        handleTetrisInput(e.key);
+                    }
+                }
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            if (e.code === 'Space') keys.Space = false;
+            if (e.key === 'c' || e.key === 'C') keys.KeyC = false;
+            if (keys.hasOwnProperty(e.key)) {
+                keys[e.key] = false;
+                if (tetrisHoldState[e.key]) {
+                    tetrisHoldState[e.key].active = false;
+                }
+            }
+        });
+
+        window.addEventListener('blur', () => {
+            for (let k in keys) keys[k] = false;
+            resetHoldKeys();
+        });
+
+        function bindTouch(id, action) {
+            const btn = document.getElementById(id);
+            const start = (e) => {
+                e.preventDefault();
+                if (isPaused) return;
+                if (action === 'Reset') {
+                    resetCurrentGame();
+                    return;
+                }
+                if (isGameRunning) {
+                    if (action === 'KeyC' && currentGame.startsWith('tetris')) {
+                        holdTetris();
+                    } else if (currentGame === 'snake') {
+                        handleSnakeInput(action);
+                    } else if (currentGame.startsWith('tetris')) {
+                        if (tetrisHoldState[action]) {
+                            const now = Date.now();
+                            tetrisHoldState[action].active = true;
+                            tetrisHoldState[action].startTime = now;
+                            tetrisHoldState[action].lastMoveTime = now;
+                        }
+                        handleTetrisInput(action);
+                    }
+                }
+                keys[action] = true;
+            };
+            const end = (e) => {
+                e.preventDefault();
+                if (action !== 'Reset') {
+                    keys[action] = false;
+                    if (tetrisHoldState[action]) {
+                        tetrisHoldState[action].active = false;
+                    }
+                }
+            };
+            btn.addEventListener('touchstart', start);
+            btn.addEventListener('touchend', end);
+            btn.addEventListener('mousedown', start);
+            btn.addEventListener('mouseup', end);
+            btn.addEventListener('mouseleave', end);
+        }
+
+        bindTouch('btnUp', 'ArrowUp');
+        bindTouch('btnDown', 'ArrowDown');
+        bindTouch('btnLeft', 'ArrowLeft');
+        bindTouch('btnRight', 'ArrowRight');
+        bindTouch('btnHold', 'KeyC');
+        bindTouch('btnReset', 'Reset');
+
+        function switchGame(gameType, evt) {
+            if (isPaused) closeSettings();
+            resetHoldKeys();
+            currentGame = gameType;
+            isGameRunning = false;
+            if (animationId) cancelAnimationFrame(animationId);
+            if (snakeState.timer) clearInterval(snakeState.timer);
+
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            if (evt) evt.target.classList.add('active');
+
+            const isTetris = gameType.startsWith('tetris');
+            nextPreviewBox.style.display = isTetris ? 'block' : 'none';
+            holdBox.style.display = isTetris ? 'block' : 'none';
+
+            initGameUI();
+            overlay.style.display = 'flex';
+            
+            if (gameType === 'snake') {
+                overlayTitle.innerText = "🐍 스네이크 게임";
+                overlayText.innerHTML = "먹이를 먹어 몸집을 키우세요!<br>ESC 키로 일시 정지 및 설정을 켤 수 있습니다.";
+            } else if (gameType === 'tetris') {
+                overlayTitle.innerText = "🧩 일반 테트리스";
+                overlayText.innerHTML = "3줄 이상 삭제 시 MINI PERFECT 2배! 판 완벽 비우기 시 PERFECT 3배!<br>Hold(C), Hard Drop(Space), Reset(R)";
+            } else if (gameType === 'tetrisHard') {
+                overlayTitle.innerText = "🔥 테트리스 (하드 모드)";
+                overlayText.innerHTML = "1,000점당 속도가 0.2배 증가합니다! (최대 3배)<br>미니 퍼펙트(2배) & 퍼펙트(3배) 혜택 동일 적용!";
+            }
+            startBtn.innerText = "게임 시작";
+        }
+
+        function initGameUI() {
+            if (currentGame === 'snake') {
+                statusBoard.innerHTML = `<div>점수: <span id="score">0</span>점</div><div>최고: <span id="highScore">${snakeState.highScore}</span>점</div>`;
+                controlsInfo.innerHTML = `🎮 <b>방향키</b> 이동 | <b>ESC</b>: 설정 | <b>R</b>: 리셋`;
+            } else if (currentGame === 'tetris') {
+                statusBoard.innerHTML = `<div>점수: <span id="score">0</span>점</div><div>줄: <span id="lines">0</span></div>`;
+                controlsInfo.innerHTML = `🎮 <b>방향키</b>(꾹 누르기 연속 이동/회전) | <b>Space</b>: 즉시낙하 | <b>C</b>: Hold`;
+            } else if (currentGame === 'tetrisHard') {
+                statusBoard.innerHTML = `<div>점수: <span id="score">0</span>점</div><div>줄: <span id="lines">0</span></div><div>속도: <span id="speedMultiplier">1.0</span>x</div>`;
+                controlsInfo.innerHTML = `🎮 <b>방향키</b>(꾹 누르기 연속 이동/회전) | <b>Space</b>: 즉시낙하 | <b>C</b>: Hold`;
+            }
+        }
+
+        function startGame() {
+            overlay.style.display = 'none';
+            isGameRunning = true;
+            isPaused = false;
+            resetHoldKeys();
+
+            if (currentGame === 'snake') startSnake();
+            else if (currentGame.startsWith('tetris')) startTetris();
+        }
+
+        function gameOver(msg, scoreInfo) {
+            isGameRunning = false;
+            isPaused = false;
+            resetHoldKeys();
+            if (animationId) cancelAnimationFrame(animationId);
+            if (snakeState.timer) clearInterval(snakeState.timer);
+
+            overlayTitle.innerText = "💥 게임 오버!";
+            overlayText.innerHTML = `${msg}<br>${scoreInfo}`;
+            startBtn.innerText = "다시 도전하기";
+            overlay.style.display = 'flex';
+        }
+
+        function getRainbowGradient(context, width, height, speed = 0.003) {
+            const time = Date.now() * speed;
+            const rainbowGrad = context.createLinearGradient(0, 0, width, height);
+            rainbowGrad.addColorStop((0.0 + time) % 1, '#FF0000');
+            rainbowGrad.addColorStop((0.2 + time) % 1, '#FF7F00');
+            rainbowGrad.addColorStop((0.4 + time) % 1, '#FFFF00');
+            rainbowGrad.addColorStop((0.6 + time) % 1, '#00FF00');
+            rainbowGrad.addColorStop((0.8 + time) % 1, '#0000FF');
+            rainbowGrad.addColorStop((1.0 + time) % 1, '#8B00FF');
+            return rainbowGrad;
+        }
+
+        /* --- 1. 스네이크 게임 --- */
+        const SNAKE_GRID = 20;
+        const SNAKE_COLS = 18;
+        const SNAKE_ROWS = 24;
+
+        const snakeState = {
+            snake: [], dx: SNAKE_GRID, dy: 0,
+            food: { x: 0, y: 0 }, score: 0, highScore: 0,
+            timer: null, changingDirection: false
+        };
+
+        function startSnake() {
+            snakeState.snake = [
+                { x: 8 * SNAKE_GRID, y: 10 * SNAKE_GRID },
+                { x: 7 * SNAKE_GRID, y: 10 * SNAKE_GRID }
+            ];
+            snakeState.dx = SNAKE_GRID;
+            snakeState.dy = 0;
+            snakeState.score = 0;
+            snakeState.changingDirection = false;
+
+            spawnSnakeFood();
+            if (snakeState.timer) clearInterval(snakeState.timer);
+            
+            if (animationId) cancelAnimationFrame(animationId);
+            gameLoopSnake();
+        }
+
+        let lastSnakeStepTime = 0;
+        function gameLoopSnake() {
+            if (!isGameRunning || currentGame !== 'snake' || isPaused) return;
+
+            const now = Date.now();
+            if (now - lastSnakeStepTime > 110) {
+                updateSnake();
+                lastSnakeStepTime = now;
+            }
+
+            renderSnake();
+            if (!isPaused) {
+                animationId = requestAnimationFrame(gameLoopSnake);
+            }
+        }
+
+        function spawnSnakeFood() {
+            let newX, newY;
+            let occupied = false;
+
+            do {
+                newX = Math.floor(Math.random() * SNAKE_COLS) * SNAKE_GRID;
+                newY = Math.floor(Math.random() * SNAKE_ROWS) * SNAKE_GRID;
+                
+                occupied = snakeState.snake.some(segment => segment.x === newX && segment.y === newY);
+            } while (occupied);
+
+            snakeState.food = { x: newX, y: newY };
+        }
+
+        function handleSnakeInput(key) {
+            if (snakeState.changingDirection) return;
+
+            if ((key === 'ArrowLeft' || key === 'Left') && snakeState.dx === 0) {
+                snakeState.dx = -SNAKE_GRID; snakeState.dy = 0; snakeState.changingDirection = true;
+            } else if ((key === 'ArrowUp' || key === 'Up') && snakeState.dy === 0) {
+                snakeState.dx = 0; snakeState.dy = -SNAKE_GRID; snakeState.changingDirection = true;
+            } else if ((key === 'ArrowRight' || key === 'Right') && snakeState.dx === 0) {
+                snakeState.dx = SNAKE_GRID; snakeState.dy = 0; snakeState.changingDirection = true;
+            } else if ((key === 'ArrowDown' || key === 'Down') && snakeState.dy === 0) {
+                snakeState.dx = 0; snakeState.dy = SNAKE_GRID; snakeState.changingDirection = true;
+            }
+        }
+
+        function updateSnake() {
+            snakeState.changingDirection = false;
+            const head = { x: snakeState.snake[0].x + snakeState.dx, y: snakeState.snake[0].y + snakeState.dy };
+
+            if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
+                if (snakeState.score > snakeState.highScore) snakeState.highScore = snakeState.score;
+                gameOver("벽에 부딪혔습니다!", `최종 점수: <b>${snakeState.score}점</b>`);
+                return;
+            }
+
+            for (let part of snakeState.snake) {
+                if (head.x === part.x && head.y === part.y) {
+                    if (snakeState.score > snakeState.highScore) snakeState.highScore = snakeState.score;
+                    gameOver("자신의 몸에 부딪혔습니다!", `최종 점수: <b>${snakeState.score}점</b>`);
+                    return;
+                }
+            }
+
+            snakeState.snake.unshift(head);
+
+            if (head.x === snakeState.food.x && head.y === snakeState.food.y) {
+                snakeState.score += 10;
+                document.getElementById('score').innerText = snakeState.score;
+                spawnSnakeFood();
+            } else {
+                snakeState.snake.pop();
+            }
+        }
+
+        function renderSnake() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (useRainbowEffect) {
+                ctx.save();
+                ctx.globalAlpha = 0.25;
+                ctx.fillStyle = getRainbowGradient(ctx, canvas.width, canvas.height, 0.0008);
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x <= canvas.width; x += SNAKE_GRID) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            }
+            for (let y = 0; y <= canvas.height; y += SNAKE_GRID) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            }
+
+            ctx.fillStyle = '#FF4757';
+            ctx.beginPath();
+            ctx.arc(snakeState.food.x + SNAKE_GRID / 2, snakeState.food.y + SNAKE_GRID / 2, SNAKE_GRID / 2 - 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            const snakeColor = useRainbowEffect ? getRainbowGradient(ctx, canvas.width, canvas.height) : '#2ED573';
+
+            snakeState.snake.forEach((part, index) => {
+                ctx.fillStyle = snakeColor;
+                ctx.fillRect(part.x + 1, part.y + 1, SNAKE_GRID - 2, SNAKE_GRID - 2);
+
+                if (index === 0) {
+                    ctx.strokeStyle = '#FFFFFF';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(part.x + 2, part.y + 2, SNAKE_GRID - 4, SNAKE_GRID - 4);
+                }
+            });
+        }
+
+        /* --- 2. 테트리스 & 테트리스 하드 모드 --- */
+        const COLS = 10, ROWS = 20, BLOCK = 24;
+        const SHAPES = [
+            [],
+            [[1, 1, 1, 1]], // I
+            [[1, 0, 0], [1, 1, 1]], // J
+            [[0, 0, 1], [1, 1, 1]], // L
+            [[1, 1], [1, 1]], // O
+            [[0, 1, 1], [1, 1, 0]], // S
+            [[0, 1, 0], [1, 1, 1]], // T
+            [[1, 1, 0], [0, 1, 1]]  // Z
+        ];
+
+        const TETRIS_COLORS = [
+            null,
+            '#00F0FF', '#0000FF', '#FFA500', '#FFFF00', '#00FF00', '#A000F0', '#FF0000'
+        ];
+
+        let tetrisBoard = [];
+        let particles = []; 
+        let dropTrails = []; 
+        const tetrisState = { score: 0, lines: 0, piece: null, nextQueue: [], holdPiece: null, canHold: true, lastDropTime: 0 };
+
+        function getDropInterval() {
+            const baseInterval = 500;
+            if (currentGame !== 'tetrisHard') return baseInterval;
+
+            const extraMultiplier = Math.floor(tetrisState.score / 1000) * 0.2;
+            let currentMultiplier = 1.0 + extraMultiplier;
+            if (currentMultiplier > 3.0) currentMultiplier = 3.0;
+
+            const speedElem = document.getElementById('speedMultiplier');
+            if (speedElem) speedElem.innerText = currentMultiplier.toFixed(1);
+
+            return baseInterval / currentMultiplier;
+        }
+
+        function getRandomPiece() {
+            const id = Math.floor(Math.random() * 7) + 1;
+            return { id: id, shape: SHAPES[id], x: 3, y: 0 };
+        }
+
+        function createShatterEffect(row, col, color) {
+            const offsetX = (canvas.width - COLS * BLOCK) / 2;
+            const startX = offsetX + col * BLOCK + BLOCK / 2;
+            const startY = row * BLOCK + BLOCK / 2;
+
+            for (let i = 0; i < 8; i++) {
+                particles.push({
+                    x: startX,
+                    y: startY,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.8) * 7,
+                    size: Math.random() * 4 + 3,
+                    color: color,
+                    alpha: 1.0,
+                    rotation: Math.random() * Math.PI * 2,
+                    vRot: (Math.random() - 0.5) * 0.3,
+                    gravity: 0.25,
+                    isPerfect: false
+                });
+            }
+        }
+
+        function createPerfectExplosion(count = 220) {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const colors = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#00F0FF', '#0000FF', '#A000F0', '#FFFFFF'];
+
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 14 + 4;
+                particles.push({
+                    x: cx,
+                    y: cy,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    alpha: 1.0,
+                    rotation: Math.random() * Math.PI * 2,
+                    vRot: (Math.random() - 0.5) * 0.5,
+                    gravity: 0.12,
+                    isPerfect: true
+                });
+            }
+        }
+
+        function addDropTrail(startY, endY) {
+            const p = tetrisState.piece;
+            if (!p) return;
+            const color = useRainbowEffect ? '#38BDF8' : TETRIS_COLORS[p.id];
+            
+            for (let r = 0; r < p.shape.length; r++) {
+                for (let c = 0; c < p.shape[r].length; c++) {
+                    if (p.shape[r][c]) {
+                        for (let y = startY; y <= endY; y++) {
+                            dropTrails.push({
+                                gridX: p.x + c,
+                                gridY: y + r,
+                                alpha: 0.4,
+                                color: color
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        function updateAndDrawParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += p.gravity;
+                p.alpha -= p.isPerfect ? 0.015 : 0.025;
+                p.rotation += p.vRot;
+
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation);
+                ctx.fillStyle = p.color;
+
+                if (p.isPerfect) {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                } else {
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                }
+                ctx.restore();
+            }
+        }
+
+        function updateAndDrawTrails() {
+            const offsetX = (canvas.width - COLS * BLOCK) / 2;
+            for (let i = dropTrails.length - 1; i >= 0; i--) {
+                let t = dropTrails[i];
+                t.alpha -= 0.04;
+
+                if (t.alpha <= 0) {
+                    dropTrails.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, t.alpha);
+                ctx.fillStyle = t.color;
+                ctx.fillRect(offsetX + t.gridX * BLOCK + 2, t.gridY * BLOCK + 2, BLOCK - 4, BLOCK - 4);
+                ctx.restore();
+            }
+        }
+
+        function triggerPerfectEffect(titleText, flashTime = 35, particleCount = 220) {
+            perfectFlashTimer = flashTime;
+            createPerfectExplosion(particleCount);
+            perfectPopup.innerText = titleText;
+            perfectPopup.classList.add('show');
+            setTimeout(() => {
+                perfectPopup.classList.remove('show');
+            }, 1300);
+        }
+
+        function startTetris() {
+            tetrisBoard = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+            particles = [];
+            dropTrails = [];
+            perfectFlashTimer = 0;
+            tetrisState.score = 0;
+            tetrisState.lines = 0;
+            tetrisState.holdPiece = null;
+            tetrisState.canHold = true;
+            tetrisState.nextQueue = [getRandomPiece(), getRandomPiece()];
+            tetrisState.lastDropTime = Date.now();
+
+            spawnTetrisPiece();
+            if (animationId) cancelAnimationFrame(animationId);
+            gameLoopTetris();
+        }
+
+        function processTetrisHeldKeys(now) {
+            // 좌우 이동 (최근 입력 우선)
+            let activeHorizontal = null;
+            if (tetrisHoldState.ArrowLeft.active && tetrisHoldState.ArrowRight.active) {
+                activeHorizontal = tetrisHoldState.ArrowLeft.startTime > tetrisHoldState.ArrowRight.startTime
+                    ? 'ArrowLeft' : 'ArrowRight';
+            } else if (tetrisHoldState.ArrowLeft.active) {
+                activeHorizontal = 'ArrowLeft';
+            } else if (tetrisHoldState.ArrowRight.active) {
+                activeHorizontal = 'ArrowRight';
+            }
+
+            if (activeHorizontal) {
+                const state = tetrisHoldState[activeHorizontal];
+                if (now - state.startTime >= DAS_DELAY && now - state.lastMoveTime >= state.rate) {
+                    handleTetrisInput(activeHorizontal);
+                    state.lastMoveTime = now;
+                }
+            }
+
+            // 아래 방향(소프트 드롭) 꾹 누르기
+            if (tetrisHoldState.ArrowDown.active) {
+                const state = tetrisHoldState.ArrowDown;
+                if (now - state.startTime >= DAS_DELAY && now - state.lastMoveTime >= state.rate) {
+                    handleTetrisInput('ArrowDown');
+                    state.lastMoveTime = now;
+                }
+            }
+
+            // 위 방향(회전) 꾹 누르기
+            if (tetrisHoldState.ArrowUp.active) {
+                const state = tetrisHoldState.ArrowUp;
+                if (now - state.startTime >= DAS_DELAY && now - state.lastMoveTime >= state.rate) {
+                    handleTetrisInput('ArrowUp');
+                    state.lastMoveTime = now;
+                }
+            }
+        }
+
+        function gameLoopTetris() {
+            if (!isGameRunning || !currentGame.startsWith('tetris') || isPaused) return;
+
+            const now = Date.now();
+            processTetrisHeldKeys(now);
+
+            const interval = getDropInterval();
+            if (now - tetrisState.lastDropTime > interval) {
+                dropTetris();
+                tetrisState.lastDropTime = now;
+            }
+
+            renderTetris();
+            if (!isPaused) {
+                animationId = requestAnimationFrame(gameLoopTetris);
+            }
+        }
+
+        function spawnTetrisPiece() {
+            tetrisState.piece = tetrisState.nextQueue.shift();
+            tetrisState.nextQueue.push(getRandomPiece());
+            tetrisState.canHold = true;
+            if (checkTetrisCollide(0, 0)) {
+                gameOver("블록이 가득 찼습니다!", `최종 점수: <b>${tetrisState.score}점</b>`);
+            }
+        }
+
+        function holdTetris() {
+            if (!tetrisState.canHold) return;
+
+            if (!tetrisState.holdPiece) {
+                tetrisState.holdPiece = { id: tetrisState.piece.id, shape: SHAPES[tetrisState.piece.id] };
+                spawnTetrisPiece();
+            } else {
+                const temp = { id: tetrisState.piece.id, shape: SHAPES[tetrisState.piece.id] };
+                const hId = tetrisState.holdPiece.id;
+                tetrisState.piece = { id: hId, shape: SHAPES[hId], x: 3, y: 0 };
+                tetrisState.holdPiece = temp;
+            }
+            tetrisState.canHold = false;
+        }
+
+        function checkTetrisCollide(offsetX, offsetY, shape = tetrisState.piece.shape) {
+            for (let r = 0; r < shape.length; r++) {
+                for (let c = 0; c < shape[r].length; c++) {
+                    if (shape[r][c]) {
+                        let newX = tetrisState.piece.x + c + offsetX;
+                        let newY = tetrisState.piece.y + r + offsetY;
+                        if (newX < 0 || newX >= COLS || newY >= ROWS) return true;
+                        if (newY >= 0 && tetrisBoard[newY][newX]) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function getGhostY() {
+            let ghostY = 0;
+            while (!checkTetrisCollide(0, ghostY + 1)) {
+                ghostY++;
+            }
+            return tetrisState.piece.y + ghostY;
+        }
+
+        function handleTetrisInput(key) {
+            if (!isGameRunning || !currentGame.startsWith('tetris')) return;
+            if (key === 'ArrowLeft' && !checkTetrisCollide(-1, 0)) tetrisState.piece.x--;
+            if (key === 'ArrowRight' && !checkTetrisCollide(1, 0)) tetrisState.piece.x++;
+            if (key === 'ArrowDown') {
+                const startY = tetrisState.piece.y;
+                dropTetris();
+                addDropTrail(startY, tetrisState.piece.y);
+                tetrisState.lastDropTime = Date.now();
+            }
+            if (key === 'ArrowUp') rotateTetris();
+            if (key === 'Space' || key === ' ') {
+                const startY = tetrisState.piece.y;
+                const ghostY = getGhostY();
+                addDropTrail(startY, ghostY);
+                tetrisState.piece.y = ghostY;
+                dropTetris();
+                tetrisState.lastDropTime = Date.now();
+            }
+        }
+
+        function rotateTetris() {
+            const rotated = tetrisState.piece.shape[0].map((_, i) =>
+                tetrisState.piece.shape.map(row => row[i]).reverse()
+            );
+            if (!checkTetrisCollide(0, 0, rotated)) {
+                tetrisState.piece.shape = rotated;
+            } else if (!checkTetrisCollide(-1, 0, rotated)) {
+                tetrisState.piece.x--;
+                tetrisState.piece.shape = rotated;
+            } else if (!checkTetrisCollide(1, 0, rotated)) {
+                tetrisState.piece.x++;
+                tetrisState.piece.shape = rotated;
+            }
+        }
+
+        function dropTetris() {
+            if (!checkTetrisCollide(0, 1)) {
+                const startY = tetrisState.piece.y;
+                tetrisState.piece.y++;
+                addDropTrail(startY, tetrisState.piece.y);
+            } else {
+                const p = tetrisState.piece;
+                for (let r = 0; r < p.shape.length; r++) {
+                    for (let c = 0; c < p.shape[r].length; c++) {
+                        if (p.shape[r][c] && p.y + r >= 0) {
+                            tetrisBoard[p.y + r][p.x + c] = p.id;
+                        }
+                    }
+                }
+
+                let clearedCount = 0;
+                for (let r = ROWS - 1; r >= 0; r--) {
+                    if (tetrisBoard[r].every(cell => cell !== 0)) {
+                        for (let c = 0; c < COLS; c++) {
+                            const blockId = tetrisBoard[r][c];
+                            const pColor = useRainbowEffect ? '#FACC15' : TETRIS_COLORS[blockId];
+                            createShatterEffect(r, c, pColor);
+                        }
+
+                        tetrisBoard.splice(r, 1);
+                        tetrisBoard.unshift(Array(COLS).fill(0));
+                        clearedCount++;
+                        r++;
+                    }
+                }
+
+                if (clearedCount > 0) {
+                    const isBoardEmpty = tetrisBoard.every(row => row.every(cell => cell === 0));
+                    
+                    let earnedScore = clearedCount * 100;
+                    
+                    if (isBoardEmpty) {
+                        earnedScore *= 3;
+                        triggerPerfectEffect("PERFECT CLEAR! 3X", 40, 220);
+                    } else if (clearedCount >= 3) {
+                        earnedScore *= 2;
+                        triggerPerfectEffect("MINI PERFECT! 2X", 25, 120);
+                    }
+
+                    tetrisState.lines += clearedCount;
+                    tetrisState.score += earnedScore;
+                    document.getElementById('score').innerText = tetrisState.score;
+                    document.getElementById('lines').innerText = tetrisState.lines;
+                }
+
+                spawnTetrisPiece();
+            }
+        }
+
+        function drawPiecePreview(ctxRef, pieceObj) {
+            ctxRef.clearRect(0, 0, 55, 55);
+            if (!pieceObj) return;
+            const shape = pieceObj.shape;
+            const miniBlock = 11;
+            const startX = (55 - shape[0].length * miniBlock) / 2;
+            const startY = (55 - shape.length * miniBlock) / 2;
+
+            for (let r = 0; r < shape.length; r++) {
+                for (let c = 0; c < shape[r].length; c++) {
+                    if (shape[r][c]) {
+                        ctxRef.fillStyle = useRainbowEffect ? getRainbowGradient(ctxRef, 55, 55) : TETRIS_COLORS[pieceObj.id];
+                        ctxRef.fillRect(startX + c * miniBlock, startY + r * miniBlock, miniBlock - 1, miniBlock - 1);
+                    }
+                }
+            }
+        }
+
+        function renderTetris() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const offsetX = (canvas.width - COLS * BLOCK) / 2;
+
+            if (perfectFlashTimer > 0) {
+                perfectFlashTimer--;
+                ctx.save();
+                ctx.globalAlpha = Math.min(1.0, perfectFlashTimer / 15);
+                ctx.fillStyle = getRainbowGradient(ctx, canvas.width, canvas.height, 0.025);
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            } else if (useRainbowEffect) {
+                ctx.save();
+                ctx.globalAlpha = 0.25;
+                ctx.fillStyle = getRainbowGradient(ctx, COLS * BLOCK, ROWS * BLOCK, 0.0008);
+                ctx.fillRect(offsetX, 0, COLS * BLOCK, ROWS * BLOCK);
+                ctx.restore();
+            }
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 1;
+            for (let c = 0; c <= COLS; c++) {
+                ctx.beginPath(); ctx.moveTo(offsetX + c * BLOCK, 0); ctx.lineTo(offsetX + c * BLOCK, ROWS * BLOCK); ctx.stroke();
+            }
+            for (let r = 0; r <= ROWS; r++) {
+                ctx.beginPath(); ctx.moveTo(offsetX, r * BLOCK); ctx.lineTo(offsetX + COLS * BLOCK, r * BLOCK); ctx.stroke();
+            }
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const blockId = tetrisBoard[r][c];
+                    if (blockId) {
+                        ctx.fillStyle = useRainbowEffect ? getRainbowGradient(ctx, canvas.width, canvas.height) : TETRIS_COLORS[blockId];
+                        ctx.fillRect(offsetX + c * BLOCK + 1, r * BLOCK + 1, BLOCK - 2, BLOCK - 2);
+                    }
+                }
+            }
+
+            updateAndDrawTrails();
+
+            if (tetrisState.piece) {
+                const p = tetrisState.piece;
+                const ghostY = getGhostY();
+                const currentPieceColor = useRainbowEffect ? getRainbowGradient(ctx, canvas.width, canvas.height) : TETRIS_COLORS[p.id];
+
+                ctx.fillStyle = currentPieceColor;
+                ctx.globalAlpha = 0.25;
+                for (let r = 0; r < p.shape.length; r++) {
+                    for (let c = 0; c < p.shape[r].length; c++) {
+                        if (p.shape[r][c]) {
+                            const gx = offsetX + (p.x + c) * BLOCK;
+                            const gy = ghostY * BLOCK + r * BLOCK;
+                            ctx.fillRect(gx + 1, gy + 1, BLOCK - 2, BLOCK - 2);
+                        }
+                    }
+                }
+
+                ctx.globalAlpha = 1.0;
+                ctx.strokeStyle = currentPieceColor;
+                ctx.lineWidth = 2;
+                for (let r = 0; r < p.shape.length; r++) {
+                    for (let c = 0; c < p.shape[r].length; c++) {
+                        if (p.shape[r][c]) {
+                            const gx = offsetX + (p.x + c) * BLOCK;
+                            const gy = ghostY * BLOCK + r * BLOCK;
+                            ctx.strokeRect(gx + 2, gy + 2, BLOCK - 4, BLOCK - 4);
+                        }
+                    }
+                }
+
+                ctx.fillStyle = currentPieceColor;
+                for (let r = 0; r < p.shape.length; r++) {
+                    for (let c = 0; c < p.shape[r].length; c++) {
+                        if (p.shape[r][c]) {
+                            ctx.fillRect(offsetX + (p.x + c) * BLOCK + 1, (p.y + r) * BLOCK + 1, BLOCK - 2, BLOCK - 2);
+                        }
+                    }
+                }
+            }
+
+            updateAndDrawParticles();
+
+            drawPiecePreview(holdCtx, tetrisState.holdPiece);
+            drawPiecePreview(nextCtx, tetrisState.nextQueue[0]);
+        }
+
+        switchGame('snake');
+    </script>
+</body>
+</html>
